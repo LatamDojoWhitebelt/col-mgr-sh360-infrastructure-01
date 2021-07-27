@@ -1,0 +1,57 @@
+#Name of the workflow
+name: Stop MGR Environment
+
+#Triggers to run the workflow
+on:
+  workflow_dispatch: #To trigger workflow manually using GUI
+    branches: [main, users/**]
+    inputs:
+      booking:
+        description: 'Stop Bookings: [yes/no]'
+        required: true
+        default: 'no'
+      coupon:
+        description: 'Stop Coupons: [yes/no]'
+        required: true
+        default: 'no'
+
+jobs:
+  # Stop Job
+  stop:
+    name: Stop MGR Resources # Name of the job
+    runs-on: ubuntu-latest # The type of runner that the job will run on
+    steps:
+      - name: Checkout #Checkout the Repository into the agent
+        uses: actions/checkout@v2
+
+      # This action is developed as an IP by the MCS team to use variable groups present in the .github/variables folder. For more details: https://github.com/marketplace/actions/set-variable
+      - name: Set Environment Variables - Organizational Details #Set Variables
+        uses: ./.github/actions/set-variable
+        with:
+          variableFileName: "org-details"
+
+      # Login into your Azure Subscription using your Azure credentials - make sure the credentials has write permissions for the specific resource group/subscription. The credentials should be stored in GitHub Secrets - (Go to Settings Tab ->Secrets)
+      - name: Azure Login
+        uses: Azure/login@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+
+      # Stop Bookings Environment
+      - name: Azure ARM - Stop MGR Bookings Resources
+        if: github.event.inputs.booking == 'yes'
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp stop --name "${{ env.cus_prefix }}-bookings-app-dev-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-DEV-${{ env.team_suffix }}"
+            az webapp stop --name "${{ env.cus_prefix }}-bookings-app-qa-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-QA-${{ env.team_suffix }}"
+            az webapp stop --name "${{ env.cus_prefix }}-bookings-app-prd-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-PRD-${{ env.team_suffix }}"
+
+      # Stop Coupons Environment
+      - name: Azure ARM - Stop MGR Coupons Resources
+        if: github.event.inputs.coupon == 'yes'
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-dev-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-DEV-${{ env.team_suffix }}"
+            az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-qa-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-QA-${{ env.team_suffix }}"
+            az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-prd-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-PRD-${{ env.team_suffix }}"

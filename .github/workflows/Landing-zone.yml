@@ -1,0 +1,138 @@
+#Name of the workflow
+name: ARM deploying Landing Zone
+
+#Triggers to run the workflow
+on:
+  #TODO [CD]: Uncomment the below block to enable push & pull_request triggers on landing zone workflow.
+  #push: #To trigger workflow when an update in pushed onto main branch
+  #  branches: [ main ]
+  #pull_request: #To trigger workflow when a PR is raised against main branch
+  #  branches: [ main ]
+  workflow_dispatch: #To trigger workflow manually using GUI
+    branches: [main, users/**]
+
+#Environment Variables to use in workflow run
+env:
+  test_env_var: "test"
+
+jobs:
+  # Deploy Job
+  deploy:
+    name: Deploy Landing Zone # Name of the job
+    runs-on: ubuntu-latest # The type of runner that the job will run on
+    steps:
+      - name: Checkout #Checkout the Repository into the agent
+        uses: actions/checkout@v2
+
+      # This action is developed as an IP by the MCS team to use variable groups present in the .github/variables folder. For more details: https://github.com/marketplace/actions/set-variable
+      - name: Set Environment Variables - Organizational Details #Set Variables
+        uses: ./.github/actions/set-variable
+        with:
+          variableFileName: "org-details"
+
+      # This action is developed as an IP by the MCS team to use variable groups present in the .github/variables folder. For more details: https://github.com/marketplace/actions/set-variable
+      - name: Set Environment Variables - Organizational Details #Set Variables
+        uses: ./.github/actions/set-variable
+        with:
+          variableFileName: "all-stages-infra"
+
+      # Login into your Azure Subscription using your Azure credentials - make sure the credentials has write permissions for the specific resource group/subscription. The credentials should be stored in GitHub Secrets - (Go to Settings Tab ->Secrets)
+      - name: Azure Login
+        uses: Azure/login@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+
+      # Deploy the RG into your environment, assuming all prerequisites are up and running.
+      - name: Azure ARM - Resource Group
+        uses: azure/arm-deploy@main
+        with:
+          scope: "subscription"
+          region: eastus
+          subscriptionId: "${{ env.SUB_ID }}"
+          template: ARM-templates/Resourcegroup-deploy.json
+          parameters: ARM-templates/Resource-group-parameters.json rgName="${{ env.cus_prefix }}-${{ env.RESOURCE_GROUP }}-${{ env.team_suffix }}" rgLocation="${{env.RESOURCE_GROUP_LOCATION}}"
+          deploymentMode: Incremental
+
+      # Deploy a VNet using azure cli command and using ARM Template
+      - name: Azure ARM - Deploy Vnet
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az deployment group create --name Provision_VNET --resource-group "${{ env.cus_prefix }}-${{ env.RESOURCE_GROUP }}-${{ env.team_suffix }}" --template-file ARM-templates/AzureVnet/deploy.json --parameters ARM-templates/AzureVnet/parameters.json vNetName="${{ env.cus_prefix }}-${{env.vNetName}}-${{ env.team_suffix }}"
+
+      # Deploy the UpdateManagement into your environment, assuming all prerequisites are up and running..
+      - name: Azure ARM - Deploy Update management
+        uses: azure/arm-deploy@main
+        with:
+          scope: "resourcegroup"
+          subscriptionId: "${{ env.SUB_ID }}"
+          resourceGroupName: "${{ env.cus_prefix }}-${{ env.RESOURCE_GROUP }}-${{ env.team_suffix }}"
+          template: ARM-templates/Update-management-deploy.json
+          parameters: ARM-templates/Update-management-Paramteres.json workspaceName="${{ env.cus_prefix }}-${{ env.workspaceName }}-${{ env.team_suffix }}" automationAccountName="${{ env.cus_prefix }}-${{ env.automationAccountName }}-${{ env.team_suffix }}" automationAccountLocation="${{env.RESOURCE_GROUP_LOCATION}}"
+          deploymentMode: Incremental
+
+      # TODO[CD]: This action is used to deploy the Activitygroup into your environment using azure cli and ARM template. 
+      # Remove the below if condition to enable the action
+      - name: Azure ARM - Deploy Azure Activity log
+        if: ${{ false }}
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az deployment sub create --name CreateDiagnosticSetting --location eastus --template-file ARM-templates/ActivityLog/deploy.json --parameters ARM-templates/ActivityLog/parameters.json settingName="${{ env.cus_prefix }}-${{ env.settingName }}-${{ env.team_suffix }}" workspaceId="/subscriptions/${{env.SUB_ID}}/resourcegroups/${{ env.cus_prefix }}-${{ env.RESOURCE_GROUP }}-${{ env.team_suffix }}/providers/microsoft.operationalinsights/workspaces/${{ env.cus_prefix }}-${{ env.workspaceName }}-${{ env.team_suffix }}"
+
+      # TODO[CD]: This action is used to deploy the Action group into your environment using ARM Deploy action available in GitHub and ARM template. 
+      # Remove the below if condition to enable the action
+      - name: Azure ARM - Deploy Azure Action Group
+        if: ${{ false }}
+        uses: azure/arm-deploy@main
+        with:
+          scope: "resourcegroup"
+          subscriptionId: "${{ env.SUB_ID }}"
+          resourceGroupName: "${{ env.cus_prefix }}-${{ env.RESOURCE_GROUP }}-${{ env.team_suffix }}"
+          template: ARM-templates/Actiongroup/deploy.json
+          parameters: ARM-templates/Actiongroup/parameters.json actionGroupName="${{ env.cus_prefix }}-${{ env.actionGroupName }}-${{ env.team_suffix }}" groupShortName="${{ env.groupShortName }}"
+          deploymentMode: Incremental
+
+  #ContinuousSecurityAZSK
+  AZSK_Scan:
+    needs: [deploy] # Only after deploy stage runs success, this stage will run, or else it will be skipped.
+    runs-on: windows-latest # The type of runner that the job will run on
+    steps:
+      - name: Checkout #Checkout the Repository into the agent
+        uses: actions/checkout@v2
+
+      # This action is developed as an IP by the MCS team to use variable groups present in the .github/variables folder. For more details: https://github.com/marketplace/actions/set-variable
+      - name: Set Environment Variables - Organizational Details #Set Variables
+        uses: ./.github/actions/set-variable
+        with:
+          variableFileName: "org-details"
+
+      # This action is developed as an IP by the MCS team to use variable groups present in the .github/variables folder. For more details: https://github.com/marketplace/actions/set-variable
+      - name: Set Environment Variables - Organizational Details #Set Variables
+        uses: ./.github/actions/set-variable
+        with:
+          variableFileName: "all-stages-infra"
+
+      - name: Login via Az module # Login to Azure with credentials of service principal stored in secrets
+        uses: azure/login@v1.1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+
+      # This action is used to run AZSK Tests on Infra resources that we deployed above.
+      - name: Install Az-Sk Module and Run AzSK Security Verification Tests
+        run: |
+          Install-Module AzSK -AllowClobber -SkipPublisherCheck -Force
+          Import-Module AzSK
+          (ECHO Y | powershell Get-AzSKAzureServicesSecurityStatus -SubscriptionId  '${{ env.SUB_ID }}' -DoNotOpenOutputFolder)
+          New-Item -Path "D:\a\${{ env.repoName }}\" -Name "upload" -ItemType "directory"
+          $destinationRoot = "D:\a\${{ env.repoName }}\upload\AzSk.zip"
+          Compress-Archive -LiteralPath ${{ env.az_sk_path }} -DestinationPath $destinationRoot
+        shell: powershell
+
+      # This action is used to publish the AZSK Results as artifacts.
+      - name: Publish AzSK Results
+        uses: actions/upload-artifact@master
+        with:
+          name: azsk
+          path: D:\a\${{ env.repoName }}\upload

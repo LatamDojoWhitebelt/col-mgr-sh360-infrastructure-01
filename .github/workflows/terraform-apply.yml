@@ -1,0 +1,69 @@
+#Name of the workflow
+name: Terraform Apply to Azure
+
+#Triggers to run the workflow
+on:
+  #TODO [CD]: Uncomment the below block to enable push & pull_request triggers on workflow.
+  #push: #To trigger workflow when an update in pushed onto main branch
+  #  branches: [ main ]
+  #pull_request: #To trigger workflow when a PR is raised against main branch
+  #  branches: [ main ]
+  workflow_dispatch: #To trigger workflow manually using GUI
+    branches: [main, users/**]
+
+jobs:
+  # Terraform Job
+  terraform:
+    runs-on: ubuntu-latest # The type of runner that the job will run on
+    #Environment Variables to use in workflow run
+    env:
+      ARM_CLIENT_ID: ${{secrets.CLIENTID}}
+      ARM_CLIENT_SECRET: ${{secrets.CLIENTSECRET}}
+      #TODO [CD]: Update the subscription Id as per your environment details
+      ARM_SUBSCRIPTION_ID: f2e68202-1605-4760-aa3d-b9859a54acb2
+      ARM_TENANT_ID: ${{secrets.TENANTID}}
+
+    name: create-RG
+    steps:
+      - name: "Checkout" #Checkout the Repository into the agent
+        uses: actions/checkout@v2
+
+      - name: Set Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform fmt
+        uses: hashicorp/terraform-github-actions@master
+        with:
+          tf_actions_version: 0.12.13
+          tf_actions_subcommand: "fmt"
+          tf_actions_working_dir: "Terraform-templates/Resource-group"
+          tf_actions_comment: true
+        continue-on-error: true
+
+      - name: Terraform Init
+        uses: hashicorp/terraform-github-actions@master
+        with:
+          tf_actions_version: 0.12.13
+          tf_actions_subcommand: "init"
+          tf_actions_working_dir: "Terraform-templates/Resource-group"
+          tf_actions_comment: true
+
+      - name: Terraform Validate
+        uses: hashicorp/terraform-github-actions@master
+        with:
+          tf_actions_version: 0.12.13
+          tf_actions_subcommand: "validate"
+          tf_actions_working_dir: "Terraform-templates/Resource-group"
+          tf_actions_comment: true
+        continue-on-error: true
+
+      #TODO [CD]: This action is used to run terraform apply on main.tf. Remove the below if condition to enable the action
+      - name: Terraform Apply
+        if: ${{ false }}
+        uses: hashicorp/terraform-github-actions@master
+        with:
+          tf_actions_version: 0.12.13
+          tf_actions_subcommand: "apply"
+          tf_actions_working_dir: "Terraform-templates/Resource-group"
+          tf_actions_comment: true
+        continue-on-error: true

@@ -1,0 +1,21 @@
+Parameter_Name,Parameter_Value
+cus_prefix,{Customer Prefix}
+team_suffix,{Team Suffix}
+bookings_repoName,{Name of Bookings Repo}
+coupons_repoName,{Name of Coupons Repo}
+infrastructure_repoName,{Name of Infrastructure Repo}
+MS_TEAMS_WEBHOOK_URI,{Teams Webhook URI}
+ADO_ORGANIZATION,{ADO Organization Name}
+ADO_PROJECT,{ADO Project Name}
+ADO_PERSONAL_ACCESS_TOKEN,{ADO Personal Access Token}
+PAT,{GitHub Personal Access Token}
+AZURE_CREDENTIALS,"{
+    ""clientId"": ""{appId of servicePrincipal}"",
+    ""displayName"": ""{displayName of servicePrincipal}"",
+    ""name"": ""{name of servicePrincipal}"",
+    ""clientSecret"": ""{password of servicePrincipal}"",
+    ""tenantId"": ""{tenantId of servicePrincipal}"",
+    ""subscriptionId"": ""{subscriptionId of subscription}""
+}"
+servicePrincipleObjId,{Service Principle Object Id}
+KEYVAULTSERVICEPRINCIPALCLIENTPASSWORD,"""{password of servicePrincipal}"""
