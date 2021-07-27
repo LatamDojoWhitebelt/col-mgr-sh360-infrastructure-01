@@ -4,10 +4,10 @@ name: Terraform Apply to Azure
 #Triggers to run the workflow
 on:
   #TODO [CD]: Uncomment the below block to enable push & pull_request triggers on workflow.
-  #push: #To trigger workflow when an update in pushed onto main branch
-  #  branches: [ main ]
-  #pull_request: #To trigger workflow when a PR is raised against main branch
-  #  branches: [ main ]
+  push: #To trigger workflow when an update in pushed onto main branch
+    branches: [ main ]
+  pull_request: #To trigger workflow when a PR is raised against main branch
+    branches: [ main ]
   workflow_dispatch: #To trigger workflow manually using GUI
     branches: [main, users/**]
 
@@ -59,7 +59,6 @@ jobs:
 
       #TODO [CD]: This action is used to run terraform apply on main.tf. Remove the below if condition to enable the action
       - name: Terraform Apply
-        if: ${{ false }}
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: 0.12.13
