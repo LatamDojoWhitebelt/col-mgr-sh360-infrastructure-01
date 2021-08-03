@@ -4,7 +4,6 @@ name: Stop MGR Environment
 #Triggers to run the workflow
 on:
   workflow_dispatch: #To trigger workflow manually using GUI
-    branches: [main, users/**]
     inputs:
       booking:
         description: 'Stop Bookings: [yes/no]'
@@ -42,9 +41,20 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az webapp stop --name "${{ env.cus_prefix }}-bookings-app-dev-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-DEV-${{ env.team_suffix }}"
-            az webapp stop --name "${{ env.cus_prefix }}-bookings-app-qa-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-QA-${{ env.team_suffix }}"
-            az webapp stop --name "${{ env.cus_prefix }}-bookings-app-prd-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-PRD-${{ env.team_suffix }}"
+            rgExists=$(az group exists -n "${{ env.cus_prefix }}-Dojo-Booking-DEV-${{ env.team_suffix }}")
+            if [ $rgExists = "true" ]; then 
+              az webapp stop --name "${{ env.cus_prefix }}-bookings-app-dev-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-DEV-${{ env.team_suffix }}"
+            fi
+            
+            rgExists=$(az group exists -n "${{ env.cus_prefix }}-Dojo-Booking-QA-${{ env.team_suffix }}")
+            if [ $rgExists = "true" ]; then 
+              az webapp stop --name "${{ env.cus_prefix }}-bookings-app-qa-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-QA-${{ env.team_suffix }}"
+            fi
+            
+            rgExists=$(az group exists -n "${{ env.cus_prefix }}-Dojo-Booking-PRD-${{ env.team_suffix }}")
+            if [ $rgExists = "true" ]; then 
+              az webapp stop --name "${{ env.cus_prefix }}-bookings-app-prd-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Booking-PRD-${{ env.team_suffix }}"
+            fi
 
       # Stop Coupons Environment
       - name: Azure ARM - Stop MGR Coupons Resources
@@ -52,6 +62,17 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-dev-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-DEV-${{ env.team_suffix }}"
-            az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-qa-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-QA-${{ env.team_suffix }}"
-            az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-prd-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-PRD-${{ env.team_suffix }}"
+            rgExists=$(az group exists -n "${{ env.cus_prefix }}-Dojo-Coupon-DEV-${{ env.team_suffix }}")
+            if [ $rgExists = "true" ]; then 
+              az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-dev-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-DEV-${{ env.team_suffix }}"
+            fi
+            
+            rgExists=$(az group exists -n "${{ env.cus_prefix }}-Dojo-Coupon-QA-${{ env.team_suffix }}")
+            if [ $rgExists = "true" ]; then 
+              az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-qa-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-QA-${{ env.team_suffix }}"
+            fi
+            
+            rgExists=$(az group exists -n "${{ env.cus_prefix }}-Dojo-Coupon-PRD-${{ env.team_suffix }}")
+            if [ $rgExists = "true" ]; then 
+              az webapp stop --name "${{ env.cus_prefix }}-dojo-coupon-prd-${{ env.team_suffix }}" --resource-group "${{ env.cus_prefix }}-Dojo-Coupon-PRD-${{ env.team_suffix }}"
+            fi
