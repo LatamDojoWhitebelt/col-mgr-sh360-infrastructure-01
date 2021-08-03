@@ -4,10 +4,10 @@ name: ARM deploying Landing Zone
 #Triggers to run the workflow
 on:
   #TODO [CD]: Uncomment the below block to enable push & pull_request triggers on landing zone workflow.
-  #push: #To trigger workflow when an update in pushed onto main branch
-  #  branches: [ main ]
-  #pull_request: #To trigger workflow when a PR is raised against main branch
-  #  branches: [ main ]
+  push: #To trigger workflow when an update in pushed onto main branch
+    branches: [ main ]
+  pull_request: #To trigger workflow when a PR is raised against main branch
+    branches: [ main ]
   workflow_dispatch: #To trigger workflow manually using GUI
     branches: [main, users/**]
 
@@ -74,7 +74,6 @@ jobs:
       # TODO[CD]: This action is used to deploy the Activitygroup into your environment using azure cli and ARM template. 
       # Remove the below if condition to enable the action
       - name: Azure ARM - Deploy Azure Activity log
-        if: ${{ false }}
         uses: azure/CLI@v1
         with:
           inlineScript: |
@@ -83,7 +82,6 @@ jobs:
       # TODO[CD]: This action is used to deploy the Action group into your environment using ARM Deploy action available in GitHub and ARM template. 
       # Remove the below if condition to enable the action
       - name: Azure ARM - Deploy Azure Action Group
-        if: ${{ false }}
         uses: azure/arm-deploy@main
         with:
           scope: "resourcegroup"
