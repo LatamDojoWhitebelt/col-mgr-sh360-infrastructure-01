@@ -2,23 +2,23 @@
   "variables": [
     {
       "name": "cus_prefix",
-      "value": "mgr"
+      "value": "col"
     },
     {
       "name": "team_suffix",
-      "value": "gc"
+      "value": "01"
     },
     {
       "name": "SUB_ID",
-      "value": "f2e68202-1605-4760-aa3d-b9859a54acb2"
+      "value": "a896fc71-2342-43af-bba0-8e48eb6052dc"
     },
     {
       "name": "repoName",
-      "value": "mgr-sh360-infrastructure-gc"
+      "value": "col-mgr-sh360-infrastructure-01"
     },
     {
       "name": "servicePrincipleObjId",
-      "value": "eace0314-426f-4883-94e3-c48680d4bb06"
+      "value": "5b5f3229-69f1-45d3-ad54-961b15079098"
     }
   ]
 }
