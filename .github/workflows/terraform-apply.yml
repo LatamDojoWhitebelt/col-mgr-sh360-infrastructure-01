@@ -67,3 +67,4 @@ jobs:
           tf_actions_working_dir: "Terraform-templates/Resource-group"
           tf_actions_comment: true
         continue-on-error: true
+
